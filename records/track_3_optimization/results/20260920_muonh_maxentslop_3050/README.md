@@ -25,13 +25,15 @@ Eight consecutive seeds (0–7), fixed 3125-step clock, validation every 10 step
 ## Control on the same hardware
 
 PR #359's script, unmodified, was run with the same eight seeds on the same pods (Lambda 8×A100-80GB, not the H100s of
-PR #359's own logs). On this hardware its statistic first passes at 3125, not 3065:
+PR #359's own logs). On this hardware its statistic first passes at 3070 (mean 3.27847), five steps after its H100 claim of 3065;
+the kernel pair passes at 3050, twenty steps earlier on the same hardware:
 
 | boundary | mean val loss (n=8) | (3.28 − mean)·√8 | |
 |---|---|---|---|
 | 3040 | 3.28024 | -0.00068 | fails |
 | 3050 | 3.27960 | 0.00115 | fails |
 | 3065 | 3.27873 | 0.00359 | fails |
+| 3070 | 3.27847 | 0.00432 | passes |
 | 3125 | 3.27661 | 0.00958 | passes |
 
 Paired by seed at the common 3125-step boundary, MaxEntSlop minus K-Maxwell:
