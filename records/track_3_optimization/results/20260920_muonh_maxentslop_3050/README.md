@@ -8,7 +8,8 @@ This entry starts from [PR #359](https://github.com/KellerJordan/modded-nanogpt/
 [PR #351](https://github.com/KellerJordan/modded-nanogpt/pull/351)'s MuonH fast-slow-decay trainer) and changes one thing:
 from step 750, the first moment is no longer a mixture of six exponential moving averages but a weighted sum of the
 parameter's last 256 gradients, the MaxEntSlop kernel pair. The kernel anneals linearly
-from its start kernel (mean gradient age 90 steps) at step 750 to its end kernel (mean age 24 steps) at the last step.
+from its start kernel (mean gradient age 90 steps) at step 750 toward its end kernel (mean age 24.05 steps), which the
+last executed update approaches but does not reach.
 Newton–Schulz, the hyperball projection, the parameter groups, the learning-rate schedule and the auxiliary AdamW are unchanged.
 The diff against PR #359's script is the diff of this branch.
 

@@ -1,5 +1,5 @@
 # REQ n=8 — MaxEntSlop first moment on PR#351 MuonH fast-slow decay (train_steps=3125), Lambda 8xA100-80GB
-# candidate = train_gpt_muonh_maxentslop.py --seed S   (this directory)
+# candidate = the literal-array version of train_gpt_muonh_maxentslop.py (branch commit 69a5f24) --seed S; this directory's script solves the same kernels
 # control   = PR#359 train_gpt_muonh_kmaxwell.py --seed S, unmodified, same pods. Metric = val_loss.
 arm	seed	v3040	v3050	v3065	v3070	v3125	first_val_lt3.28
 cand	0	3.27831	3.27767	3.27676	3.27653	3.27476	3020
