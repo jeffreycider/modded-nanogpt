@@ -90,8 +90,8 @@ class MomentumDesiderata:
     """We numerically solve for momentum kernels that have certain properties. Just a bookkeeping class to track the desiderata.
 
     mean_lag:             sum_k k * kernel[k], the mean age in steps of the gradients the direction averages over.
-    log_moment:           sum_k log(1 + k) * kernel[k], a second moment of the age distribution; together with
-                          mean_lag it fixes how the weight is spread between recent and old gradients.
+    log_moment:           sum_k log(1 + k) * kernel[k], the mean log-age; together with mean_lag it fixes how
+                          the weight is spread between recent and old gradients.
     newest_weight:        kernel[0], the weight of the current gradient.
     second_newest_weight: kernel[1], the weight of the previous gradient.
     length:               number of kernel entries (ages 0 .. length-1).
@@ -140,7 +140,8 @@ def solve_for_momentum_kernel_given_desiderata(d: MomentumDesiderata) -> Momentu
     w = np.concatenate([[w0, w1], mass * p])
     ages = np.arange(d.length)
     check = np.array([w.sum(), ((-1.0) ** ages) @ w, ages @ w, np.log1p(ages) @ w])
-    assert np.allclose(check, [1.0, 0.0, d.mean_lag, d.log_moment], atol=1e-9), check
+    assert np.allclose(check, [1.0, 0.0, d.mean_lag, d.log_moment], rtol=0.0, atol=1e-9), check
+    assert w.min() > 0.0 and len(w) == d.length, (w.min(), len(w))
     return torch.as_tensor(w, dtype=torch.float32)
 
 # I tuned the desiderata for an early momentum kernel and the ending momentum kernel. We solve for each.
@@ -152,7 +153,8 @@ early_momentum_kernel = solve_for_momentum_kernel_given_desiderata(EARLY_MOMENTU
 late_momentum_kernel = solve_for_momentum_kernel_given_desiderata(LATE_MOMENTUM_DESIDERATA)
 
 def momentum_anneal_fraction(step: int) -> float:
-    """Position of `step` in the anneal: 0 at MAXENTSLOP_START (early kernel), 1 at the last step (late kernel)."""
+    """Position of `step` in the anneal: 0 at MAXENTSLOP_START (early kernel), 1 at step TRAIN_STEPS. The last executed
+    update is step TRAIN_STEPS - 1, so the late kernel is approached over the fixed clock and not quite reached."""
     return min(1.0, max(0.0, (step - MAXENTSLOP_START) / MAXENTSLOP_ANNEAL_STEPS))
 
 def interpolate_momentum_kernels(early_momentum_kernel: MomentumKernel, late_momentum_kernel: MomentumKernel,
