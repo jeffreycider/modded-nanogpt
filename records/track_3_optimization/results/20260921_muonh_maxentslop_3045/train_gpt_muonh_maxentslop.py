@@ -15,11 +15,17 @@ and anneal linearly from an early kernel (mean age 90 steps) to a late kernel
 moment changes; its NS direction, hyperball projection, parameter groups, LR
 schedule, and the auxiliary AdamW are unchanged.
 
+The measured intervention also removes, before Newton-Schulz, the component
+parallel to the current parameter matrix from the weighted sum of gradients
+aged 64 through 255. Gradients aged 0 through 63 are unchanged. The split is
+named OLD_HISTORY_PROJECTION_AGE below; this placement is the one measured,
+without a claim here about why it helps.
+
 The gradient history is recorded from step 0. The submitted schedule is the
 default; only --seed varies across the n=8 confirmation:
 
   torchrun --standalone --nproc_per_node=8 \
-      train_gpt_muonh_maxentslop.py \
+      train_gpt_muonh_maxentslop_proj.py \
       --seed 0
 """
 
@@ -79,6 +85,7 @@ FAST_DECAY_EXPONENT = args.fast_decay_exponent
 MAXENTSLOP_START = 750                      # first step that uses a momentum kernel; before it, ordinary Nesterov momentum
 MAXENTSLOP_ANNEAL_STEPS = TRAIN_STEPS - MAXENTSLOP_START
 MAXENTSLOP_HISTORY_LENGTH = 256             # how many past gradients each parameter keeps = the length of a momentum kernel
+OLD_HISTORY_PROJECTION_AGE = 64             # ages at or above this boundary are projected before Newton-Schulz
 
 # I call a "momentum kernel" the weights that we assign to lagged gradients.
 # At lag t (t = 0 is the current gradient), EMA momentum has kernel weight (1 - beta) * beta**t.
@@ -358,6 +365,11 @@ def apply_momentum_kernel_to_raw_gradient_history(momentum_kernel: MomentumKerne
     return _weighted_sum_over_history(momentum_kernel, raw_gradient_history.buffer, raw_gradient_history.newest_row)
 
 @torch.compile
+def _weighted_old_sum(momentum_kernel: MomentumKernel, buffer: Tensor, newest_row: int) -> Tensor:
+    row_ages = (newest_row - torch.arange(buffer.size(0), device=buffer.device)) % buffer.size(0)
+    return (momentum_kernel[row_ages] * (row_ages >= OLD_HISTORY_PROJECTION_AGE)) @ buffer
+
+@torch.compile
 def muon_update_maxentslop(grad: Tensor, momentum_direction: Tensor) -> Tensor:
     """MuonH's update from a momentum direction: Newton-Schulz orthogonalisation and the aspect-ratio scale, as in muon_update."""
     update = zeropower_via_newtonschulz5(momentum_direction.view_as(grad))
@@ -411,6 +423,10 @@ class MuonH(torch.optim.Optimizer):
                         momentum_kernel = interpolate_momentum_kernels(
                             state["early_kernel_gpu"], state["late_kernel_gpu"], momentum_anneal_fraction(self._step))
                         momentum_direction = apply_momentum_kernel_to_raw_gradient_history(momentum_kernel, state["history"])
+                        old = _weighted_old_sum(momentum_kernel, state["history"].buffer,
+                                                state["history"].newest_row).view_as(p)
+                        coefficient = (old.float() * p.float()).sum() / p.float().square().sum()
+                        momentum_direction = momentum_direction - (coefficient * p.float()).flatten()
                         update = muon_update_maxentslop(p.grad, momentum_direction)
                     else:
                         update = muon_update(p.grad, state["momentum"], mu=group["mu"])
@@ -692,44 +708,3 @@ for step in range(train_steps + 1):
            + f" step_avg:{1000*approx_training_time/(step + 1):.2f}ms", console=True, log=False)
 
 dist.destroy_process_group()
-
-====================================================================================================
-Running PyTorch 2.11.0+cu128 compiled for CUDA 12.8 on NVIDIA A100-SXM4-80GB with world_size 8
-Config: warmup_end=100, plateau_end=200, peak_lr=0.03, fast_decay_end=1750, floor_lr=0.006, min_lr=0.0003272727, slow_decay_schedule=linear, fast_decay_exponent=0.6, train_steps=3050, seed=7
-MaxEntSlop: history_length=256, start=750, early kernel MomentumDesiderata(mean_lag=90.0, log_moment=3.7153849427, newest_weight=0.07235, second_newest_weight=0.02235, length=256), late kernel MomentumDesiderata(mean_lag=24.05, log_moment=2.3786333904, newest_weight=0.137, second_newest_weight=0.087, length=256)
-====================================================================================================
-step:0/3050 val_loss:10.94020 train_time:0.001s step_avg:nanms
-step:125/3050 val_loss:4.88769 train_time:49.162s step_avg:393.29ms
-step:250/3050 val_loss:4.23259 train_time:92.586s step_avg:347.39ms
-step:375/3050 val_loss:4.04165 train_time:135.667s step_avg:344.64ms
-step:500/3050 val_loss:3.91788 train_time:178.760s step_avg:344.75ms
-step:625/3050 val_loss:3.84751 train_time:221.798s step_avg:344.31ms
-step:750/3050 val_loss:3.78726 train_time:264.810s step_avg:344.09ms
-step:875/3050 val_loss:3.70655 train_time:310.994s step_avg:369.47ms
-step:1000/3050 val_loss:3.67395 train_time:355.002s step_avg:352.07ms
-step:1125/3050 val_loss:3.63743 train_time:398.991s step_avg:351.91ms
-step:1250/3050 val_loss:3.59813 train_time:443.003s step_avg:352.10ms
-step:1375/3050 val_loss:3.56454 train_time:487.021s step_avg:352.15ms
-step:1500/3050 val_loss:3.52988 train_time:530.995s step_avg:351.79ms
-step:1625/3050 val_loss:3.49760 train_time:575.005s step_avg:352.08ms
-step:1750/3050 val_loss:3.46501 train_time:619.006s step_avg:352.01ms
-step:1875/3050 val_loss:3.43953 train_time:662.986s step_avg:351.83ms
-step:2000/3050 val_loss:3.41691 train_time:707.015s step_avg:352.24ms
-step:2125/3050 val_loss:3.39718 train_time:751.013s step_avg:351.98ms
-step:2250/3050 val_loss:3.37675 train_time:794.994s step_avg:351.85ms
-step:2375/3050 val_loss:3.35854 train_time:839.006s step_avg:352.09ms
-step:2500/3050 val_loss:3.34081 train_time:883.029s step_avg:352.19ms
-step:2625/3050 val_loss:3.32391 train_time:927.016s step_avg:351.90ms
-step:2750/3050 val_loss:3.30836 train_time:971.020s step_avg:352.03ms
-step:2875/3050 val_loss:3.29425 train_time:1015.046s step_avg:352.21ms
-step:3000/3050 val_loss:3.28299 train_time:1059.022s step_avg:351.80ms
-step:3005/3050 val_loss:3.28258 train_time:1060.785s step_avg:352.65ms
-step:3010/3050 val_loss:3.28225 train_time:1062.550s step_avg:352.96ms
-step:3015/3050 val_loss:3.28181 train_time:1064.313s step_avg:352.65ms
-step:3020/3050 val_loss:3.28147 train_time:1066.076s step_avg:352.60ms
-step:3025/3050 val_loss:3.28110 train_time:1067.838s step_avg:352.30ms
-step:3030/3050 val_loss:3.28080 train_time:1069.601s step_avg:352.64ms
-step:3035/3050 val_loss:3.28046 train_time:1071.362s step_avg:352.29ms
-step:3040/3050 val_loss:3.28016 train_time:1073.124s step_avg:352.42ms
-step:3045/3050 val_loss:3.27987 train_time:1075.201s step_avg:415.31ms
-step:3050/3050 val_loss:3.27962 train_time:1076.962s step_avg:352.19ms
