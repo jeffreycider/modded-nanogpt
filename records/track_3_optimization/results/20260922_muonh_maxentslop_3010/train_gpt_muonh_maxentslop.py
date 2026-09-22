@@ -11,22 +11,26 @@ From step 750 the momentum direction is a weighted sum of the parameter's last
 one, ...). The 256 weights, a MomentumKernel, are solved at startup from a
 MomentumDesiderata (mean gradient age, log-age moment, the two newest weights)
 and anneal linearly from an early kernel (mean age 90 steps) to a late kernel
-(mean age 24.05 steps) over the rest of training. Only MuonH's first
-moment changes; its NS direction, hyperball projection, parameter groups, LR
-schedule, and the auxiliary AdamW are unchanged.
+(mean age 24.05 steps) over the rest of training. The temporal weights and
+radial adjustment change the input to Newton-Schulz. Its numerical calculation,
+the sphere retraction, parameter groups and auxiliary AdamW are inherited from
+the parent trainer. Learning-rate values are specified by the launch command
+below.
 
-The measured intervention also removes, before Newton-Schulz, the component
-parallel to the current parameter matrix from the weighted sum of gradients
-aged 64 through 255. Gradients aged 0 through 63 are unchanged. The split is
-named OLD_HISTORY_PROJECTION_AGE below; this placement is the one measured,
-without a claim here about why it helps.
+The measured intervention also sets, before Newton-Schulz, the part of the
+momentum sum parallel to the current parameter matrix. Its length is 0.044
+times the norm of the weight-perpendicular part, and it keeps the sign of the
+original weight-parallel part. No history age enters this rule. This placement
+and ratio are measured; why they help remains open.
 
-The gradient history is recorded from step 0. The submitted schedule is the
-default; only --seed varies across the n=8 confirmation:
+The gradient history is recorded from step 0. The measured tuning configuration
+uses the following explicit clock and ending learning rate; the script defaults
+do not reproduce it. Confirmation across eight consecutive seeds on this exact
+standalone script remains required before a record claim.
 
   torchrun --standalone --nproc_per_node=8 \
-      train_gpt_muonh_maxentslop_proj.py \
-      --seed 0
+      train_gpt_muonh_maxentslop_gamma.py \
+      --train_steps 3045 --min_lr 0.000349 --seed 0
 """
 
 import os
@@ -85,7 +89,7 @@ FAST_DECAY_EXPONENT = args.fast_decay_exponent
 MAXENTSLOP_START = 750                      # first step that uses a momentum kernel; before it, ordinary Nesterov momentum
 MAXENTSLOP_ANNEAL_STEPS = TRAIN_STEPS - MAXENTSLOP_START
 MAXENTSLOP_HISTORY_LENGTH = 256             # how many past gradients each parameter keeps = the length of a momentum kernel
-OLD_HISTORY_PROJECTION_AGE = 64             # ages at or above this boundary are projected before Newton-Schulz
+RADIAL_TO_TANGENT_RATIO = 0.044             # retained signed radial length / tangent Frobenius norm
 
 # I call a "momentum kernel" the weights that we assign to lagged gradients.
 # At lag t (t = 0 is the current gradient), EMA momentum has kernel weight (1 - beta) * beta**t.
@@ -365,11 +369,6 @@ def apply_momentum_kernel_to_raw_gradient_history(momentum_kernel: MomentumKerne
     return _weighted_sum_over_history(momentum_kernel, raw_gradient_history.buffer, raw_gradient_history.newest_row)
 
 @torch.compile
-def _weighted_old_sum(momentum_kernel: MomentumKernel, buffer: Tensor, newest_row: int) -> Tensor:
-    row_ages = (newest_row - torch.arange(buffer.size(0), device=buffer.device)) % buffer.size(0)
-    return (momentum_kernel[row_ages] * (row_ages >= OLD_HISTORY_PROJECTION_AGE)) @ buffer
-
-@torch.compile
 def muon_update_maxentslop(grad: Tensor, momentum_direction: Tensor) -> Tensor:
     """MuonH's update from a momentum direction: Newton-Schulz orthogonalisation and the aspect-ratio scale, as in muon_update."""
     update = zeropower_via_newtonschulz5(momentum_direction.view_as(grad))
@@ -423,10 +422,14 @@ class MuonH(torch.optim.Optimizer):
                         momentum_kernel = interpolate_momentum_kernels(
                             state["early_kernel_gpu"], state["late_kernel_gpu"], momentum_anneal_fraction(self._step))
                         momentum_direction = apply_momentum_kernel_to_raw_gradient_history(momentum_kernel, state["history"])
-                        old = _weighted_old_sum(momentum_kernel, state["history"].buffer,
-                                                state["history"].newest_row).view_as(p)
-                        coefficient = (old.float() * p.float()).sum() / p.float().square().sum()
-                        momentum_direction = momentum_direction - (coefficient * p.float()).flatten()
+                        momentum_sum = momentum_direction.view_as(p).float()
+                        parameter = p.float()
+                        parameter_norm_squared = parameter.square().sum()
+                        radial_coefficient = (momentum_sum * parameter).sum() / parameter_norm_squared
+                        tangent = momentum_sum - radial_coefficient * parameter
+                        target_coefficient = (RADIAL_TO_TANGENT_RATIO * torch.sign(radial_coefficient)
+                                              * tangent.norm() / parameter_norm_squared.sqrt())
+                        momentum_direction = (tangent + target_coefficient * parameter).flatten()
                         update = muon_update_maxentslop(p.grad, momentum_direction)
                     else:
                         update = muon_update(p.grad, state["momentum"], mu=group["mu"])
