@@ -1,0 +1,13 @@
+target mean <= 3.2785858; boundaries common to all eight: 81 (last 2900)
+RAW_CROSSING 2740
+final means: ema 3.27204 raw 3.27166
+per-seed val_ema_loss at the candidate boundary and the preceding boundary:
+  readout_s1800_tau200_blend0.6_s2.log         ema@2685=3.27911 ema@2680=3.27943
+  readout_s1800_tau200_blend0.6_s3.log         ema@2685=3.27703 ema@2680=3.27731
+  readout_s1800_tau200_blend0.6_s4.log         ema@2685=3.28027 ema@2680=3.28056
+  readout_s1800_tau200_blend0.6_s5.log         ema@2685=3.27640 ema@2680=3.27668
+  readout_s1800_tau200_blend0.6_s6.log         ema@2685=3.27822 ema@2680=3.27851
+  readout_s1800_tau200_blend0.6_s7.log         ema@2685=3.27740 ema@2680=3.27771
+  readout_s1800_tau200_blend0.6_s8.log         ema@2685=3.27944 ema@2680=3.27972
+  readout_s1800_tau200_blend0.6_s9.log         ema@2685=3.27875 ema@2680=3.27905
+FORMAL_EMA_CROSSING 2685 mean 3.2783275 ; preceding boundary 2680 mean 3.2786212 FAILS

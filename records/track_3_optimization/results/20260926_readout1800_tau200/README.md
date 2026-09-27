@@ -17,8 +17,8 @@ The schedule is still 2900 steps; the reported step is the first validation boun
 readout's validation loss satisfies the track rule (3.28 − mean)·√8 ≥ 0.004, i.e. mean ≤ 3.2785858, with the preceding
 five-step boundary failing.
 
-Result (from the eight replication runs of the env-driven re-implementation; the filing runs of this script are in progress): **2685 steps**, eight-seed mean **3.27833** at that boundary (preceding boundary 2680: mean 3.27862, fails);
-record #46 reports 2690. Final (step 2900) eight-seed mean 3.27204.
+Result: **2685 steps**, eight-seed mean **3.27841** at that boundary (preceding boundary 2680: mean 3.27870, fails);
+record #46 reports 2690. Final (step 2900) eight-seed mean 3.27209. The eight replication runs of an env-driven re-implementation of the same trainer with the same two constants gave the same crossing, 2685 (mean 3.27833; see replication/).
 
 ## How the two constants were chosen
 
@@ -37,7 +37,7 @@ not the final loss. Selection seeds 0 and 1 are disjoint from the filing seeds 2
 - `train_gpt_readout1800.py`: `train_gpt_cwd_SOTA.py` from record #46 with four line changes (the two constants above; the
   seed printed to stdout; validation every 5 steps from step 2500 so the first boundary is observed). sha256
   `866257dfc60a03f3d1b8f86a4de937d413b12c9ac40d9e3e1953c54d798f52e1`.
-- `logs/pr_readout1800_s{2..9}.txt`: the eight filing runs of this script (8×H100, torch 2.14+cu130), seeds 2–9, launched as
+- `logs/pr_readout1800_s{2..9}.txt`: the console logs (every validation line) of the eight filing runs of this script (8×H100, torch 2.14+cu130), seeds 2–9, launched as
   `torchrun --standalone --nproc_per_node=8 train_gpt_readout1800.py --seed <k>` with no environment overrides.
 - `formal.txt`: the eight-seed rule computed from those logs (`formal_crossing.py`, included).
 - `replication/`: eight earlier runs (seeds 2–9) of an env-driven re-implementation of the #46 trainer with the same two
