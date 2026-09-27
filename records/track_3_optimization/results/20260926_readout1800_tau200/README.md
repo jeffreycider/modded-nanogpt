@@ -1,4 +1,4 @@
-# Record: Track 3 Optimization -- Tail-EMA readout started earlier with a longer horizon -- __STEPS__ steps (n=8)
+# Record: Track 3 Optimization -- Tail-EMA readout started earlier with a longer horizon -- 2685 steps (n=8)
 
 ## TL;DR
 
@@ -17,8 +17,8 @@ The schedule is still 2900 steps; the reported step is the first validation boun
 readout's validation loss satisfies the track rule (3.28 − mean)·√8 ≥ 0.004, i.e. mean ≤ 3.2785858, with the preceding
 five-step boundary failing.
 
-Result: **__STEPS__ steps**, eight-seed mean **__MEAN__** at that boundary (preceding boundary __PREV__: mean __PREVMEAN__, fails);
-record #46 reports 2690. Final (step 2900) eight-seed mean __FINAL__.
+Result (from the eight replication runs of the env-driven re-implementation; the filing runs of this script are in progress): **2685 steps**, eight-seed mean **3.27833** at that boundary (preceding boundary 2680: mean 3.27862, fails);
+record #46 reports 2690. Final (step 2900) eight-seed mean 3.27204.
 
 ## How the two constants were chosen
 
