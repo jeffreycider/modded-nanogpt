@@ -1,0 +1,11 @@
+{
+  "parent_commit": "36bff7fe0c4427e5801a78e91bd4fbcc7b992e3c",
+  "original_sha256": "5031c72defe6e54139814147d6727a66c382332e52fe7886e446d820138e5e59",
+  "fixed_training_steps": 3060,
+  "original_lr_and_decay_functions_unchanged": true,
+  "mu_sum_fixed": 1263.4044831967965,
+  "constraint": "first_boundary(c+lambda_t/mu_sum delta0)=eta_original(t)*mu_sum",
+  "lambda_t": "4*eta_original(t)",
+  "muonh": "deferred pending full geometric boundary",
+  "validation": "15 CPU tests passed; all candidate FP32 kernels independently audited"
+}

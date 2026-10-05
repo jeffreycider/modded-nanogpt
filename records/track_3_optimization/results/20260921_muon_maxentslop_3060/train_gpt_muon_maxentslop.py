@@ -137,6 +137,26 @@ def interpolate_momentum_kernels(early_momentum_kernel: MomentumKernel, late_mom
     """The kernel in force at a step: the entrywise linear interpolation (1 - fraction) * early + fraction * late."""
     return early_momentum_kernel.lerp(late_momentum_kernel, fraction)
 
+# A pre-solved table enforces κ* = fixed μ × the unchanged record LR.
+# CPU preprocessing certifies the FIRST boundary for each actual FP32 row.
+CONSTRAINED_SCHEDULE_PATH = os.environ.get("CONSTRAINED_SCHEDULE_PATH")
+constrained_kernel_table = None
+constrained_schedule_metadata = None
+if CONSTRAINED_SCHEDULE_PATH:
+    import json as _schedule_json
+    import hashlib as _schedule_hashlib
+    with np.load(CONSTRAINED_SCHEDULE_PATH, allow_pickle=False) as _schedule:
+        _kernels = _schedule["kernels"].copy()
+        constrained_schedule_metadata = _schedule_json.loads(str(_schedule["metadata"]))
+    assert TRAIN_STEPS == 3060
+    MAXENTSLOP_START = constrained_schedule_metadata["start"]
+    assert _kernels.shape == (TRAIN_STEPS - MAXENTSLOP_START, MAXENTSLOP_HISTORY_LENGTH)
+    assert _kernels.dtype == np.float32 and np.isfinite(_kernels).all() and _kernels.min() >= 0
+    assert _schedule_hashlib.sha256(_kernels.tobytes()).hexdigest() == constrained_schedule_metadata["kernel_sha256"]
+    assert constrained_schedule_metadata["reference_kappa"] == 31.62336703513191
+    assert constrained_schedule_metadata["reference_lr"] == .025
+    constrained_kernel_table = torch.from_numpy(_kernels)
+
 ########################################
 #              Dataloader              #
 ########################################
@@ -350,6 +370,7 @@ class Muon(torch.optim.Optimizer):
         self.early_momentum_kernel = early_momentum_kernel
         self.late_momentum_kernel = late_momentum_kernel
         self.history_length = MAXENTSLOP_HISTORY_LENGTH
+        self.constrained_schedule_gpu = None
 
     @torch.no_grad()
     def step(self):
@@ -367,11 +388,16 @@ class Muon(torch.optim.Optimizer):
                         state["history"] = RawGradientHistory(self.history_length, p.numel(), p.device)
                     state["history"].push(p.grad)          # the history is recorded from step 0
                     if self._step >= MAXENTSLOP_START:
-                        if "early_kernel_gpu" not in state:
-                            state["early_kernel_gpu"] = self.early_momentum_kernel.to(device=p.device)
-                            state["late_kernel_gpu"] = self.late_momentum_kernel.to(device=p.device)
-                        momentum_kernel = interpolate_momentum_kernels(
-                            state["early_kernel_gpu"], state["late_kernel_gpu"], momentum_anneal_fraction(self._step))
+                        if constrained_kernel_table is not None:
+                            if self.constrained_schedule_gpu is None:
+                                self.constrained_schedule_gpu = constrained_kernel_table.to(device=p.device)
+                            momentum_kernel = self.constrained_schedule_gpu[self._step - MAXENTSLOP_START]
+                        else:
+                            if "early_kernel_gpu" not in state:
+                                state["early_kernel_gpu"] = self.early_momentum_kernel.to(device=p.device)
+                                state["late_kernel_gpu"] = self.late_momentum_kernel.to(device=p.device)
+                            momentum_kernel = interpolate_momentum_kernels(
+                                state["early_kernel_gpu"], state["late_kernel_gpu"], momentum_anneal_fraction(self._step))
                         momentum_direction = apply_momentum_kernel_to_raw_gradient_history(momentum_kernel, state["history"])
                         update = muon_update_maxentslop(p.grad, momentum_direction)
                     else:
@@ -413,6 +439,8 @@ print0(code)
 print0("="*100)
 print0(f"Running PyTorch {torch.version.__version__} compiled for CUDA {torch.version.cuda}"
        + f" on {torch.cuda.get_device_name(device)} with world_size {dist.get_world_size()}")
+if constrained_schedule_metadata is not None:
+    print0("Constrained momentum schedule: " + _schedule_json.dumps(constrained_schedule_metadata))
 print0(f"MaxEntSlop recipe: history_length={MAXENTSLOP_HISTORY_LENGTH} start={MAXENTSLOP_START} anneal_steps={MAXENTSLOP_ANNEAL_STEPS} "
        f"early={EARLY_MOMENTUM_DESIDERATA} late={LATE_MOMENTUM_DESIDERATA} muon_weight_decay=0.1*eta", console=True)
 print0("="*100)

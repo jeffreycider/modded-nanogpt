@@ -8,7 +8,10 @@ The phase is derived by entropy maximization, never a sweep hyperparameter.
 from dataclasses import dataclass, asdict
 import numpy as np
 from scipy.optimize import linprog, minimize_scalar
-from scipy.special import logsumexp
+def logsumexp(z):
+    # All callers use finite, real, one-dimensional NumPy float64 arrays.
+    maximum=np.max(z)
+    return maximum+np.log(np.exp(z-maximum).sum())
 
 
 @dataclass(frozen=True)
@@ -170,13 +173,19 @@ def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256,instant
         lo=max(1e-7,theta-width);hi=min(np.pi-1e-7,theta+width)
         local_objective(theta)
         minimize_scalar(local_objective,bounds=(lo,hi),method='bounded',options={'xatol':1e-8,'maxiter':35})
-        if local:
-            entropy,theta,weights,lam=max(local,key=lambda x:x[0])
+        # A higher-entropy phase can have an earlier unstable crossing.
+        # Check the other local candidates before abandoning continuation.
+        for entropy,theta,weights,lam in sorted(local,key=lambda x:x[0],reverse=True):
             actual,_=boundary(weights)
             if abs(actual/kappa-1)<2e-6:
                 return {'weights':weights,'entropy':entropy,'theta':theta,'dual':lam,'kappa':kappa,'instantaneous_offset':instantaneous_offset}
     grid=np.unique(np.r_[np.geomspace(1e-5,.12,phase_points//2),
                          np.linspace(.12,np.pi-1e-5,phase_points)])
+    # For small gains, the admissible phases collapse toward zero. A fixed
+    # global grid can miss their entire feasible interval near the final LR.
+    phase_limit=2*np.arcsin(min(1.,kappa*(1+instantaneous_offset)/2))
+    if phase_limit < .12:
+        grid=np.unique(np.r_[grid,np.linspace(1e-7,phase_limit,phase_points*4)])
     if previous is not None:
         grid=np.unique(np.r_[grid,previous['theta'],previous['theta']+np.linspace(-.03,.03,9)])
     candidates=[]
