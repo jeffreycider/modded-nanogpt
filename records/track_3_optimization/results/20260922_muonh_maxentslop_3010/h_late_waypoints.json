@@ -1,0 +1,31 @@
+{
+  "waypoints": [
+    {
+      "iteration": 900,
+      "shape": {
+        "c0": 0.079,
+        "c1": 0.0246,
+        "mean_lag": 81.0,
+        "log_moment": 3.635
+      }
+    },
+    {
+      "iteration": 2400,
+      "shape": {
+        "c0": 0.12,
+        "c1": 0.07,
+        "mean_lag": 40.0,
+        "log_moment": 2.8
+      }
+    },
+    {
+      "iteration": 3009,
+      "shape": {
+        "c0": 0.12,
+        "c1": 0.08,
+        "mean_lag": 21.0,
+        "log_moment": 2.26
+      }
+    }
+  ]
+}

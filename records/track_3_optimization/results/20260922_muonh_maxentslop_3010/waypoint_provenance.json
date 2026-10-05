@@ -1,0 +1,18 @@
+{
+  "repository": "jeffreycider/modded-nanogpt",
+  "parent_record_pr": 368,
+  "parent_commit": "0fb1d70cae14a9bea3329cbbb83cd3e6d4d7f681",
+  "original_source_sha256": "4a8b026ea4c97aa7f56055ec6b2dcce3761b783f92bd159ea7eda4a4a8015030",
+  "lr_schedule": "original 3010-step record for all optimizers",
+  "constraint": "kappa_target(t) = 31.62336703513191 * original_muonh_lr(t) / 0.01711068502877683",
+  "normalization": "reference mu_sum fixed at original-record anchor; divide by 524288 for token-mean units",
+  "tuned_coordinates": [
+    "start_iteration",
+    "middle_iteration",
+    "start c0,c1,mean_lag,log_moment",
+    "middle c0,c1,mean_lag,log_moment",
+    "end c0,c1,mean_lag,log_moment"
+  ],
+  "interpolation": "linear in four desiderata; independently solve and audit kernel at every iteration",
+  "solver": "maximum entropy on numerically searched certified phase branches; no global nonconvex optimum guarantee"
+}
