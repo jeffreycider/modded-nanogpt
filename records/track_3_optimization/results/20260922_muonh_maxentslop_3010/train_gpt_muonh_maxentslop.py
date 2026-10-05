@@ -173,6 +173,12 @@ def interpolate_momentum_kernels(early_momentum_kernel: MomentumKernel, late_mom
     """The kernel in force at a step: the entrywise linear interpolation (1 - fraction) * early + fraction * late."""
     return early_momentum_kernel.lerp(late_momentum_kernel, fraction)
 
+# Derive hidden-matrix LR from the original, unchanged momentum schedule.
+from kappa_lr import KernelBoundaryRatio
+kernel_boundary_ratio = KernelBoundaryRatio(MAXENTSLOP_START, TRAIN_STEPS,
+    lambda t: interpolate_momentum_kernels(early_momentum_kernel, late_momentum_kernel,
+                                           momentum_anneal_fraction(t)))
+
 ########################################
 #              Dataloader              #
 ########################################
@@ -645,6 +651,13 @@ def set_hparams(step):
                                  slow_decay_schedule=SLOW_DECAY_SCHEDULE,
                                  fast_decay_exponent=FAST_DECAY_EXPONENT,
                                  plateau_end=PLATEAU_END)
+    if step >= MAXENTSLOP_START:
+        anchor_lr = fast_slow_decay_lr(MAXENTSLOP_START, train_steps,
+            warmup_end=WARMUP_END, fast_decay_end=FAST_DECAY_END,
+            peak_lr=PEAK_LR, floor_lr=FLOOR_LR, min_lr=MIN_LR,
+            slow_decay_schedule=SLOW_DECAY_SCHEDULE,
+            fast_decay_exponent=FAST_DECAY_EXPONENT, plateau_end=PLATEAU_END)
+        muon_lr = anchor_lr * kernel_boundary_ratio(step)
     for group in optimizer2.param_groups:
         # initial_lr is 1.0, so this is exactly muon_lr
         group["lr"] = group["initial_lr"] * muon_lr
