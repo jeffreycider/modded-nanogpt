@@ -452,9 +452,24 @@ model = GPT(vocab_size=50304, num_layers=12, model_dim=768).cuda()
 model.compile(dynamic=False)
 
 
-num_trials = 1
+trial_batch_path=os.environ.get('TRIAL_BATCH_PATH')
+trial_specs=None
+if trial_batch_path:
+    import json as _trial_json
+    trial_specs=_trial_json.loads(Path(trial_batch_path).read_text())
+num_trials = len(trial_specs) if trial_specs is not None else 1
 
 for _ in range(num_trials):
+    if trial_specs is not None:
+        trial_spec=trial_specs[_]
+        from waypoint_schedule import load_schedule,interpolate_waypoint_kernels
+        waypoint_kernels,waypoint_schedule_metadata=load_schedule(
+            trial_spec['schedule_path'],solve_for_momentum_kernel_given_desiderata,MomentumDesiderata)
+        MAXENTSLOP_START=waypoint_schedule_metadata['waypoints'][0]['iteration']
+        os.environ['RESUME_CHECKPOINT']=trial_spec['resume_checkpoint']
+        os.environ['STOP_STEP']=str(TRAIN_STEPS)
+        os.environ['CACHE_CHECKPOINT_GPU']='1'
+        print0('TRIAL_START '+_trial_json.dumps(trial_spec),console=True)
 
 
     ########################################
@@ -545,11 +560,11 @@ for _ in range(num_trials):
         # the earliest formally-passing step is selected the same way for every trial)
         dense = 2900 <= step <= train_steps and step % 10 == 0
         val_step_freq = 125 if step / train_steps < 0.9 else 25
-        if step in {start_step,stop_step,train_steps} or step % val_step_freq == 0 or dense:
+        if (step in {start_step,stop_step,train_steps} or step % val_step_freq == 0 or dense) and (os.environ.get('SEGMENT_FINAL_ONLY')!='1' or step in {start_step,stop_step}):
             # stop the clock
             dist.barrier()
             time_since_last_val = time.perf_counter() - t0
-            step_avg = time_since_last_val / (step - last_val_step) if step > 0 else float("nan")
+            step_avg = time_since_last_val / (step - last_val_step) if step > last_val_step else float("nan")
             last_val_step = step
             training_time += time_since_last_val
             model.eval()
@@ -568,6 +583,11 @@ for _ in range(num_trials):
             t0 = time.perf_counter()
 
         if step == stop_step:
+            if os.environ.get('COMPARE_CHECKPOINT'):
+                import json as _compare_json
+                from checkpoint_state import compare
+                reports=compare(os.environ['COMPARE_CHECKPOINT'],model,optimizers,device)
+                print0('RESUME_COMPARISON '+_compare_json.dumps(reports),console=True)
             break
 
         # --------------- TRAINING SECTION -----------------
@@ -587,5 +607,8 @@ for _ in range(num_trials):
         approx_training_time = training_time + (time.perf_counter() - t0)
         print0(f"step:{step+1}/{train_steps} train_time:{approx_training_time:.3f}s"
                + f" step_avg:{1000*approx_training_time/(step + 1):.2f}ms", console=True, log=False)
+
+    if trial_specs is not None:
+        print0('TRIAL_RESULT '+_trial_json.dumps({'name':trial_spec['name'],'final_loss':float(val_loss)}),console=True)
 
 dist.destroy_process_group()

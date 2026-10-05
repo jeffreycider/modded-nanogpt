@@ -54,3 +54,22 @@ def test_original_lr_and_model_functions_are_unchanged():
     for name in ['GPT','Block','Linear','RMSNorm','RawGradientHistory']:
         ca=nodes(a,ast.ClassDef);cb=nodes(b,ast.ClassDef)
         if name in ca:assert ca[name]==cb[name]
+
+
+def test_cached_optimizer_template_stays_immutable():
+    from checkpoint_state import clone_tree
+    p=torch.nn.Parameter(torch.arange(6,dtype=torch.float32))
+    opt=torch.optim.AdamW([p],lr=.01)
+    p.square().sum().backward();opt.step();opt.zero_grad()
+    opt.state[p]['history']=History()
+    template=pack_optimizer(opt)
+    frozen=clone_tree(template)
+    q=torch.nn.Parameter(p.detach().clone());other=torch.optim.AdamW([q],lr=.01)
+    unpack_optimizer(other,clone_tree(template),History)
+    other.state[q]['history'].buffer.zero_()
+    q.square().sum().backward();other.step()
+    for pid,values in frozen['state'].items():
+        for key,value in values.items():
+            actual=template['state'][pid][key]
+            if isinstance(value,torch.Tensor):torch.testing.assert_close(actual,value,rtol=0,atol=0)
+            elif isinstance(value,dict):torch.testing.assert_close(actual['buffer'],value['buffer'],rtol=0,atol=0)

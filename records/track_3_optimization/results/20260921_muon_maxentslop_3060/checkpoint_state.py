@@ -9,6 +9,14 @@ import torch
 import torch.distributed as dist
 
 FORMAT=1
+_cached_payloads={}
+
+def clone_tree(value):
+    if isinstance(value,torch.Tensor):return value.clone()
+    if isinstance(value,dict):return {k:clone_tree(v) for k,v in value.items()}
+    if isinstance(value,list):return [clone_tree(v) for v in value]
+    if isinstance(value,tuple):return tuple(clone_tree(v) for v in value)
+    return value
 
 def pack_optimizer(optimizer):
     state=optimizer.state_dict()
@@ -61,12 +69,19 @@ def load(root,model,optimizers,history_class,seed,train_steps,device):
     assert m['format']==FORMAT and m['world_size']==dist.get_world_size()
     assert (m['seed'],m['train_steps'])==(seed,train_steps)
     path=root/f'rank_{rank:02d}.pt';assert path.stat().st_size==m['files'][path.name]
-    state=torch.load(path,map_location=device,weights_only=True)
+    key=(str(path),str(device))
+    cache=os.environ.get('CACHE_CHECKPOINT_GPU')=='1'
+    if cache and key in _cached_payloads:
+        state=_cached_payloads[key]
+    else:
+        if cache:_cached_payloads.clear()
+        state=torch.load(path,map_location=device,weights_only=True)
+        if cache:_cached_payloads[key]=state
     assert (state['rank'],state['step'])==(rank,m['step'])
     if rank==0:model.load_state_dict(state['model'])
     for value in model.state_dict().values():dist.broadcast(value,0)
     for opt,packed,count in zip(optimizers,state['optimizers'],state['optimizer_steps']):
-        unpack_optimizer(opt,packed,history_class)
+        unpack_optimizer(opt,clone_tree(packed) if cache else packed,history_class)
         if count is not None:opt._step=count
     restore_rng(state['rng']);dist.barrier()
     return m['step']
@@ -81,3 +96,26 @@ def data_position(files,batches,batch_size):
         if batches<capacity:return index,batches*batch_size
         batches-=capacity
     raise ValueError('resume data exhausted')
+
+def compare(root,model,optimizers,device):
+    """Compare resumed state with a frozen uninterrupted checkpoint."""
+    rank=dist.get_rank()
+    reference=torch.load(Path(root)/f'rank_{rank:02d}.pt',map_location=device,weights_only=True)
+    differences=[]
+    def walk(a,b,path):
+        if isinstance(a,torch.Tensor):
+            if not torch.equal(a,b):
+                differences.append({'path':path,'max_abs':float((a.float()-b.float()).abs().max())})
+        elif isinstance(a,dict):
+            assert set(a)==set(b),(path,set(a),set(b))
+            for key in a:walk(a[key],b[key],path+'/'+str(key))
+        elif isinstance(a,(list,tuple)):
+            assert len(a)==len(b)
+            for i,(x,y) in enumerate(zip(a,b)):walk(x,y,path+'/'+str(i))
+        else:
+            if a!=b:differences.append({'path':path,'a':a,'b':b})
+    walk(reference['optimizers'],[pack_optimizer(o) for o in optimizers],'optimizers')
+    if rank==0:walk(reference['model'],model.state_dict(),'model')
+    report={'rank':rank,'exact':not differences,'differences':differences}
+    reports=[None for _ in range(dist.get_world_size())];dist.all_gather_object(reports,report)
+    return reports
