@@ -1,0 +1,335 @@
+{
+  "stage": 2900,
+  "purpose": "Paired isolated c0 bracket and mean-lag/log-moment directions at2900; final3060 loss after explicitly fixed3000 suffix. Suffix provisional pending mean-lag refinement review.",
+  "trials": [
+    {
+      "name": "incumbent",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {}
+    },
+    {
+      "name": "c0_reference",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.130922,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "c0": 0.130922
+      }
+    },
+    {
+      "name": "c0_095",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "c0": 0.095
+      }
+    },
+    {
+      "name": "c0_075",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.075,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "c0": 0.075
+      }
+    },
+    {
+      "name": "mean_21",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 21,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "mean_lag": 21
+      }
+    },
+    {
+      "name": "mean_29",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 29,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "mean_lag": 29
+      }
+    },
+    {
+      "name": "log_lower",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.31343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_moment": 2.31343576258202
+      }
+    },
+    {
+      "name": "log_higher",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.39343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_moment": 2.39343576258202
+      }
+    },
+    {
+      "name": "incumbent_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 2900,
+            "shape": {
+              "c0": 0.11151721952079423,
+              "c1": 0.08250137266835425,
+              "mean_lag": 25.140956844015594,
+              "log_moment": 2.35343576258202
+            }
+          },
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22.0,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {}
+    }
+  ]
+}
