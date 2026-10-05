@@ -137,25 +137,18 @@ def interpolate_momentum_kernels(early_momentum_kernel: MomentumKernel, late_mom
     """The kernel in force at a step: the entrywise linear interpolation (1 - fraction) * early + fraction * late."""
     return early_momentum_kernel.lerp(late_momentum_kernel, fraction)
 
-# A pre-solved table enforces κ* = fixed μ × the unchanged record LR.
-# CPU preprocessing certifies the FIRST boundary for each actual FP32 row.
-CONSTRAINED_SCHEDULE_PATH = os.environ.get("CONSTRAINED_SCHEDULE_PATH")
-constrained_kernel_table = None
-constrained_schedule_metadata = None
-if CONSTRAINED_SCHEDULE_PATH:
+# Optional ordinary MaxEntSlop waypoints: entropy-solve only at endpoints,
+# then linearly blend the solved kernels, exactly like the reference recipe.
+# There is no curvature or stability-boundary constraint.
+WAYPOINT_SCHEDULE_PATH=os.environ.get('WAYPOINT_SCHEDULE_PATH')
+waypoint_kernels=None
+waypoint_schedule_metadata=None
+if WAYPOINT_SCHEDULE_PATH:
     import json as _schedule_json
-    import hashlib as _schedule_hashlib
-    with np.load(CONSTRAINED_SCHEDULE_PATH, allow_pickle=False) as _schedule:
-        _kernels = _schedule["kernels"].copy()
-        constrained_schedule_metadata = _schedule_json.loads(str(_schedule["metadata"]))
-    assert TRAIN_STEPS == 3060
-    MAXENTSLOP_START = constrained_schedule_metadata["start"]
-    assert _kernels.shape == (TRAIN_STEPS - MAXENTSLOP_START, MAXENTSLOP_HISTORY_LENGTH)
-    assert _kernels.dtype == np.float32 and np.isfinite(_kernels).all() and _kernels.min() >= 0
-    assert _schedule_hashlib.sha256(_kernels.tobytes()).hexdigest() == constrained_schedule_metadata["kernel_sha256"]
-    assert constrained_schedule_metadata["reference_kappa"] == 31.62336703513191
-    assert constrained_schedule_metadata["reference_lr"] == .025
-    constrained_kernel_table = torch.from_numpy(_kernels)
+    from waypoint_schedule import load_schedule,interpolate_waypoint_kernels
+    waypoint_kernels,waypoint_schedule_metadata=load_schedule(
+        WAYPOINT_SCHEDULE_PATH,solve_for_momentum_kernel_given_desiderata,MomentumDesiderata)
+    MAXENTSLOP_START=waypoint_schedule_metadata['waypoints'][0]['iteration']
 
 ########################################
 #              Dataloader              #
@@ -173,12 +166,17 @@ def _load_data_shard(file: Path):
         assert nbytes == 2 * num_tokens, "number of tokens read does not match header"
     return tokens
 
-def distributed_data_generator(filename_pattern: str, batch_size: int, seq_len=1024):
+def distributed_data_generator(filename_pattern: str, batch_size: int, seq_len=1024, start_batch=0):
     files = sorted(Path.cwd().glob(filename_pattern))
     assert batch_size % dist.get_world_size() == 0
     local_batch_size = batch_size // dist.get_world_size()
-    file_iter = iter(files)
-    tokens, pos = _load_data_shard(next(file_iter)), 0
+    if start_batch:
+        from checkpoint_state import data_position
+        shard,position=data_position(files,start_batch,batch_size)
+    else:
+        shard,position=0,0
+    file_iter = iter(files[shard:])
+    tokens, pos = _load_data_shard(next(file_iter)), position
     while True:
         if pos + batch_size + 1 >= len(tokens):
             tokens, pos = _load_data_shard(next(file_iter)), 0
@@ -370,7 +368,7 @@ class Muon(torch.optim.Optimizer):
         self.early_momentum_kernel = early_momentum_kernel
         self.late_momentum_kernel = late_momentum_kernel
         self.history_length = MAXENTSLOP_HISTORY_LENGTH
-        self.constrained_schedule_gpu = None
+        self.waypoint_schedule_gpu = None
 
     @torch.no_grad()
     def step(self):
@@ -388,10 +386,10 @@ class Muon(torch.optim.Optimizer):
                         state["history"] = RawGradientHistory(self.history_length, p.numel(), p.device)
                     state["history"].push(p.grad)          # the history is recorded from step 0
                     if self._step >= MAXENTSLOP_START:
-                        if constrained_kernel_table is not None:
-                            if self.constrained_schedule_gpu is None:
-                                self.constrained_schedule_gpu = constrained_kernel_table.to(device=p.device)
-                            momentum_kernel = self.constrained_schedule_gpu[self._step - MAXENTSLOP_START]
+                        if waypoint_kernels is not None:
+                            if self.waypoint_schedule_gpu is None:
+                                self.waypoint_schedule_gpu = waypoint_kernels.to(device=p.device)
+                            momentum_kernel = interpolate_waypoint_kernels(self.waypoint_schedule_gpu,waypoint_schedule_metadata['waypoints'],self._step)
                         else:
                             if "early_kernel_gpu" not in state:
                                 state["early_kernel_gpu"] = self.early_momentum_kernel.to(device=p.device)
@@ -439,8 +437,8 @@ print0(code)
 print0("="*100)
 print0(f"Running PyTorch {torch.version.__version__} compiled for CUDA {torch.version.cuda}"
        + f" on {torch.cuda.get_device_name(device)} with world_size {dist.get_world_size()}")
-if constrained_schedule_metadata is not None:
-    print0("Constrained momentum schedule: " + _schedule_json.dumps(constrained_schedule_metadata))
+if waypoint_schedule_metadata is not None:
+    print0("Ordinary MaxEntSlop waypoints: " + _schedule_json.dumps(waypoint_schedule_metadata))
 print0(f"MaxEntSlop recipe: history_length={MAXENTSLOP_HISTORY_LENGTH} start={MAXENTSLOP_START} anneal_steps={MAXENTSLOP_ANNEAL_STEPS} "
        f"early={EARLY_MOMENTUM_DESIDERATA} late={LATE_MOMENTUM_DESIDERATA} muon_weight_decay=0.1*eta", console=True)
 print0("="*100)
@@ -521,22 +519,33 @@ for _ in range(num_trials):
     #        Training and Validation       #
     ########################################
 
-    train_loader = distributed_data_generator("data/fineweb10B/fineweb_train_*.bin", batch_size)
+    from checkpoint_state import save as save_checkpoint,load as load_checkpoint
+    checkpoint_root=os.environ.get('CHECKPOINT_ROOT')
+    checkpoint_steps={int(x) for x in os.environ.get('CHECKPOINT_STEPS','').split(',') if x}
+    resume_path=os.environ.get('RESUME_CHECKPOINT')
+    start_step=0
+    if resume_path:
+        start_step=load_checkpoint(resume_path,model,optimizers,RawGradientHistory,SEED,train_steps,device)
+    stop_step=int(os.environ.get('STOP_STEP',train_steps))
+    assert 0<=start_step<=stop_step<=train_steps
+    train_loader = distributed_data_generator("data/fineweb10B/fineweb_train_*.bin", batch_size,start_batch=start_step)
     for p in model.parameters():
         dist.broadcast(p.detach(), 0)
     # start the clock
     training_time = 0
-    last_val_step = 0
+    last_val_step = start_step
     dist.barrier()
     t0 = time.perf_counter()
-    for step in range(train_steps + 1):
+    for step in range(start_step,stop_step+1):
+        if checkpoint_root and step in checkpoint_steps:
+            save_checkpoint(checkpoint_root,step,model,optimizers,SEED,train_steps)
 
         # --------------- VALIDATION SECTION -----------------
         # dense eval-only validation over the crossing zone (uniform across all seeds;
         # the earliest formally-passing step is selected the same way for every trial)
         dense = 2900 <= step <= train_steps and step % 10 == 0
         val_step_freq = 125 if step / train_steps < 0.9 else 25
-        if step == train_steps or step % val_step_freq == 0 or dense:
+        if step in {start_step,stop_step,train_steps} or step % val_step_freq == 0 or dense:
             # stop the clock
             dist.barrier()
             time_since_last_val = time.perf_counter() - t0
@@ -558,7 +567,7 @@ for _ in range(num_trials):
             dist.barrier()
             t0 = time.perf_counter()
 
-        if step == train_steps:
+        if step == stop_step:
             break
 
         # --------------- TRAINING SECTION -----------------
