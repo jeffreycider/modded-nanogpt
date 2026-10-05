@@ -1,0 +1,1 @@
+{"waypoints": [{"iteration": 1000, "shape": {"c0": 0.079, "c1": 0.0246, "mean_lag": 81.0, "log_moment": 3.635}}, {"iteration": 3050, "shape": {"c0": 0.12, "c1": 0.07, "mean_lag": 40.0, "log_moment": 2.8}}, {"iteration": 3059, "shape": {"c0": 0.05, "c1": 0.05, "mean_lag": 118.199077341557, "log_moment": 4.420393106700327}}]}
