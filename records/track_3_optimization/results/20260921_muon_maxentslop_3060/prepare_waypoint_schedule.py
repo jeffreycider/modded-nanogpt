@@ -46,7 +46,20 @@ def prepare(config,original_source,output):
         kernel=previous['weights'].astype(np.float32)
         actual,theta=matching_boundary(kernel,mu_sum,4*lr(t))
         if abs(actual/target-1)>5e-5:
-            raise InfeasibleKernel(f'FP32 boundary drift at {t}: {actual} vs {target}')
+            # Some nearly tangent phase crossings are sensitive to rounding.
+            # Search again using the actual FP32 row in every spectral audit;
+            # keep the prescribed target and all original shape constraints.
+            offset=4*lr(t)/mu_sum
+            def fp32_boundary(shifted):
+                raw=np.array(shifted,copy=True);raw[0]-=offset
+                raw=raw.astype(np.float32).astype(np.float64);raw[0]+=offset
+                return stability_boundary(raw)
+            previous=solve_stability_matched(shape,lr(t),mu_sum,4*lr(t),
+                                            fp32_boundary,phase_points=256)
+            kernel=previous['weights'].astype(np.float32)
+            actual,theta=matching_boundary(kernel,mu_sum,4*lr(t))
+            if abs(actual/target-1)>5e-5:
+                raise InfeasibleKernel(f'FP32 boundary drift at {t}: {actual} vs {target}')
         moments=np.array([kernel.sum(dtype=np.float64),((-1.)**ages)@kernel,ages@kernel,np.log1p(ages)@kernel])
         if not np.allclose(moments,[1,0,shape.mean_lag,shape.log_moment],rtol=0,atol=1e-5):
             raise InfeasibleKernel(f'FP32 moments drift at {t}: {moments}')
