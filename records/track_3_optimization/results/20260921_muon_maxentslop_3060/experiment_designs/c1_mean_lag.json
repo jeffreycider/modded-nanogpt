@@ -1,0 +1,336 @@
+{
+  "stage": 3000,
+  "purpose": "Directional identification for remaining kernel HPs: c1 and mean lag perturbed one at a time at one endpoint; all other HPs fixed; replicated controls",
+  "trials": [
+    {
+      "name": "baseline",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": null,
+        "changed_hp": null,
+        "value": null
+      }
+    },
+    {
+      "name": "left_c1_down",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.04,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 0,
+        "changed_hp": "c1",
+        "value": 0.04
+      }
+    },
+    {
+      "name": "left_c1_up",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.12,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 0,
+        "changed_hp": "c1",
+        "value": 0.12
+      }
+    },
+    {
+      "name": "right_c1_down",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.035,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 1,
+        "changed_hp": "c1",
+        "value": 0.035
+      }
+    },
+    {
+      "name": "right_c1_up",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.11,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 1,
+        "changed_hp": "c1",
+        "value": 0.11
+      }
+    },
+    {
+      "name": "baseline_middle",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": null,
+        "changed_hp": null,
+        "value": null
+      }
+    },
+    {
+      "name": "left_mean_down",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 0,
+        "changed_hp": "mean_lag",
+        "value": 24
+      }
+    },
+    {
+      "name": "left_mean_up",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 33,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 0,
+        "changed_hp": "mean_lag",
+        "value": 33
+      }
+    },
+    {
+      "name": "right_mean_down",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 1,
+        "changed_hp": "mean_lag",
+        "value": 22
+      }
+    },
+    {
+      "name": "right_mean_up",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 30,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": 1,
+        "changed_hp": "mean_lag",
+        "value": 30
+      }
+    },
+    {
+      "name": "baseline_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "changed_waypoint": null,
+        "changed_hp": null,
+        "value": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "stage": 3000,
+  "purpose": "Researcher-selected extension of promising log-moment level-only contrast; slope fixedzero, c0/c1/mean lag fixed; bracketleveloptimum rather than claiming reversal",
+  "trials": [
+    {
+      "name": "baseline",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.4365236266892625,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "down04",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.3965236266892624
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.3965236266892624
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.3965236266892624,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "up04",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4765236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4765236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.4765236266892625,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "up08",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.5165236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.5165236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.5165236266892625,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "up12",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.5565236266892626
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.5565236266892626
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.5565236266892626,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "up16",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.5965236266892626
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.5965236266892626
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.5965236266892626,
+        "log_slope": 0
+      }
+    },
+    {
+      "name": "baseline_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "log_level": 2.4365236266892625,
+        "log_slope": 0
+      }
+    }
+  ]
+}

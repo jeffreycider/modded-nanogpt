@@ -1,0 +1,131 @@
+{
+  "stage": 3000,
+  "purpose": "Test whether lower c0 helps across the whole last segment: vary endpoint c0 only; fix left c0 .055 and all other HPs",
+  "trials": [
+    {
+      "name": "incumbent_right",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4074811176270363
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.13510647984718976,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4655661357514886
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "right095",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4074811176270363
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4655661357514886
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "right055",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4074811176270363
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4655661357514886
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "right015",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4074811176270363
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.015,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4655661357514886
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "incumbent_right_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 28.625246870137882,
+              "log_moment": 2.4074811176270363
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.13510647984718976,
+              "c1": 0.07175480974152328,
+              "mean_lag": 26.181320682883403,
+              "log_moment": 2.4655661357514886
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
