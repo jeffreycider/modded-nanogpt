@@ -541,6 +541,12 @@ for _ in range(num_trials):
     start_step=0
     if resume_path:
         start_step=load_checkpoint(resume_path,model,optimizers,RawGradientHistory,SEED,train_steps,device)
+        if os.environ.get('COMPARE_RESTORE_CHECKPOINT'):
+            import json as _restore_json
+            from checkpoint_state import compare
+            reports=compare(resume_path,model,optimizers,device)
+            print0('RESTORE_COMPARISON '+_restore_json.dumps(reports),console=True)
+            assert all(r['exact'] for r in reports),'Checkpoint restoration changed state' 
     stop_step=int(os.environ.get('STOP_STEP',train_steps))
     assert 0<=start_step<=stop_step<=train_steps
     train_loader = distributed_data_generator("data/fineweb10B/fineweb_train_*.bin", batch_size,start_batch=start_step)

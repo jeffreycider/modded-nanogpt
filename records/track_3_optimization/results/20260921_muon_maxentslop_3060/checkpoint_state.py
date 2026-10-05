@@ -105,7 +105,7 @@ def compare(root,model,optimizers,device):
     def walk(a,b,path):
         if isinstance(a,torch.Tensor):
             if not torch.equal(a,b):
-                differences.append({'path':path,'max_abs':float((a.float()-b.float()).abs().max())})
+                differences.append({'path':path,'max_abs':float((a.float()-b.float()).abs().max()),'relative_l2':float((a.float()-b.float()).norm()/b.float().norm().clamp_min(1e-30))})
         elif isinstance(a,dict):
             assert set(a)==set(b),(path,set(a),set(b))
             for key in a:walk(a[key],b[key],path+'/'+str(key))
