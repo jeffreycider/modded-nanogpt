@@ -1,0 +1,18 @@
+{
+  "objective": "Backward ordinary MaxEntSlop waypoint tuning with fixed original Muon Defazio LR and Adam behavior",
+  "constraints": {"kappa_constraint": false, "score": "final validation loss after fixed suffix", "seeds": [0, 1], "owned_nodes": 1},
+  "findings": [
+    {"factor": "c0 at 3000", "evidence": "Controlled decrease .115143 to .055 improved loss ~.000041 on seed0 and ~.000036 on seed1. Broad plateau .035-.075; exact minimum unresolved.", "decision": ".055 provisional; do not transfer the downward trend to earlier waypoints without testing."},
+    {"factor": "c0 at 2900", "evidence": "Seed0 with earlier refined suffix: .095-.112 tied; .055 worsened ~.000032.", "decision": "Retest on both seeds after freezing the final suffix."},
+    {"factor": "log moment slope", "evidence": "With low c0 fixed, increasing versus decreasing slopes differed by only ~.0000013 seed0 and ~.0000035 seed1, within observed repeat variation.", "decision": "No reversal benefit established. Flat log moment 2.4365236 provisional."},
+    {"factor": "log moment level", "evidence": "Broad plateau approximately 2.44-2.52; increasing by .16 worsened both seeds.", "decision": "No monotonic increase claim."},
+    {"factor": "mean lag at 3000 and 3060", "evidence": "Paired controlled means24/22 improved relative to28.625/26.181 on both seeds;20/18 worsened and16/14 substantially worsened.", "decision": "Test isolated endpoint changes of two steps around24/22 plus matching diagonals, then freeze a robust choice."},
+    {"factor": "c1", "evidence": "No consistent direction; right c1 .11 worsened both seeds.", "decision": "Keep provisional values unless a subsequent isolated contrast establishes a gain."}
+  ],
+  "mean_lag_pair_results": {
+    "seed0": {"baseline": 3.2771899700164795, "left_only_down": 3.2771782875061035, "right_only_down": 3.2771801948547363, "both_24_22": 3.277179479598999, "both_20_18": 3.2772202491760254, "both_16_14": 3.2775285243988037, "baseline_repeat": 3.2771878242492676},
+    "seed1": {"baseline": 3.277167558670044, "left_only_down": 3.2771549224853516, "right_only_down": 3.277153730392456, "both_24_22": 3.277148485183716, "both_20_18": 3.2771904468536377, "both_16_14": 3.277491807937622, "baseline_repeat": 3.277161121368408}
+  },
+  "next_design": "stage3000_meanlag_refine.json",
+  "validation_limit": "These are checkpoint suffix results. A record claim requires full forward validation of the assembled schedule."
+}
