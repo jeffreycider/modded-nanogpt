@@ -1,0 +1,13 @@
+{
+  "waypoints": [
+    {"iteration": 3000, "shape": {"c0": 0.055, "c1": 0.08228189322988964, "mean_lag": 24.0, "log_moment": 2.4365236266892625}},
+    {"iteration": 3060, "shape": {"c0": 0.095, "c1": 0.07175480974152328, "mean_lag": 22.0, "log_moment": 2.4365236266892625}}
+  ],
+  "selection": {
+    "status": "fixed suffix for backward2900 tuning",
+    "mean_lag": "Shorter24/22 improved both seeds versus28.625/26.181.20/18 and16/14 worse. Local bracket found plateau. Apparent isolated right24 seed0gain did not replicate in balanced ABBA controls; retain22.",
+    "log_moment": "No slope reversal benefit established; flat level2.4365 inside broad plateau.",
+    "c0": "Left.055 selected from replicated broad low-c0plateau. Right.095 provisional from endpoint contrast; exact optimum unresolved.",
+    "limitation": "Checkpoint suffix results; full-forward assembled schedule validation still required."
+  }
+}
