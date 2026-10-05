@@ -1,0 +1,118 @@
+{
+  "stage": 3000,
+  "purpose": "Confirm endpoint mean24 isolated seed0 gain with balanced repeated controls on both seeds; all other kernel HPs and original LR fixed",
+  "trials": [
+    {
+      "name": "right22_control",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "right_mean": 22
+      }
+    },
+    {
+      "name": "right24",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 24,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "right_mean": 24
+      }
+    },
+    {
+      "name": "right24_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 24,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "right_mean": 24
+      }
+    },
+    {
+      "name": "right22_control_repeat",
+      "schedule": {
+        "waypoints": [
+          {
+            "iteration": 3000,
+            "shape": {
+              "c0": 0.055,
+              "c1": 0.08228189322988964,
+              "mean_lag": 24.0,
+              "log_moment": 2.4365236266892625
+            }
+          },
+          {
+            "iteration": 3060,
+            "shape": {
+              "c0": 0.095,
+              "c1": 0.07175480974152328,
+              "mean_lag": 22,
+              "log_moment": 2.4365236266892625
+            }
+          }
+        ]
+      },
+      "factors": {
+        "right_mean": 22
+      }
+    }
+  ]
+}
