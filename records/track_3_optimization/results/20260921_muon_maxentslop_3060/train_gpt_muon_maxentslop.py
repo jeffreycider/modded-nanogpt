@@ -137,6 +137,12 @@ def interpolate_momentum_kernels(early_momentum_kernel: MomentumKernel, late_mom
     """The kernel in force at a step: the entrywise linear interpolation (1 - fraction) * early + fraction * late."""
     return early_momentum_kernel.lerp(late_momentum_kernel, fraction)
 
+# Derive hidden-matrix LR from the original, unchanged momentum schedule.
+from kappa_lr import KernelBoundaryRatio
+kernel_boundary_ratio = KernelBoundaryRatio(MAXENTSLOP_START, TRAIN_STEPS,
+    lambda t: interpolate_momentum_kernels(early_momentum_kernel, late_momentum_kernel,
+                                           momentum_anneal_fraction(t)))
+
 ########################################
 #              Dataloader              #
 ########################################
@@ -485,8 +491,16 @@ for _ in range(num_trials):
         for opt in optimizers:
             for group in opt.param_groups:
                 group["lr"] = group["initial_lr"] * eta
-        for group in optimizer2.param_groups:      # Muon's weight decay follows the learning-rate schedule
-            group["weight_decay"] = group["initial_weight_decay"] * eta
+        hidden_eta = eta
+        if step >= MAXENTSLOP_START:
+            start_progress = MAXENTSLOP_START / train_steps
+            anchor_eta = (1.0 if start_progress < 1 - cooldown_frac else
+                          (1 - start_progress) / cooldown_frac)
+            hidden_eta = anchor_eta * kernel_boundary_ratio(step)
+            for group in optimizer2.param_groups:
+                group["lr"] = group["initial_lr"] * hidden_eta
+        for group in optimizer2.param_groups:      # Preserve Muon's rate-following decay rule
+            group["weight_decay"] = group["initial_weight_decay"] * hidden_eta
 
 
     ########################################

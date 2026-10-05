@@ -1,0 +1,7 @@
+{
+  "repository": "jeffreycider/modded-nanogpt",
+  "upstream_pr": 369,
+  "parent_commit": "36bff7fe0c4427e5801a78e91bd4fbcc7b992e3c",
+  "original_sha256": "5031c72defe6e54139814147d6727a66c382332e52fe7886e446d820138e5e59",
+  "treatment_sha256": "06da092d5198f880597377c4eaaca7b696b615959d9a84eb8d751f771118cc82"
+}
