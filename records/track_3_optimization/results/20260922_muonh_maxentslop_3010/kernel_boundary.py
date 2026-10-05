@@ -7,22 +7,29 @@ import math
 import numpy as np
 
 
-def stability_boundary(weights, grid_size=32768):
+def stability_boundary(weights, grid_size=32768, retention=1.0):
+    """First positive gain for x_next = retention*x - gain*sum c*x_past.
+
+    Nonunit kernel mass is intentional: decay can add a lag-zero response.
+    This does not certify negative/complex spatial modes or live trajectories.
+    """
     c = np.asarray(weights, dtype=np.float64)
     if c.ndim != 1 or not len(c) or not np.isfinite(c).all() or c.sum() <= 0:
         raise ValueError("expected a finite kernel with positive DC response")
     if grid_size < 8 * len(c):
         raise ValueError("phase grid too small for this kernel")
+    if not -1 < retention <= 1:
+        raise ValueError('expected a small-positive stable starting regime')
     # FFT evaluates H(theta)=sum c[k] exp(-ik theta), without an NxL array.
     theta = np.linspace(0, np.pi, grid_size + 1)
     response = np.fft.rfft(c, n=2 * grid_size)
-    rhs = 1 - np.exp(1j * theta)
+    rhs = retention - np.exp(1j * theta)
     phase = np.imag(rhs * response.conj())
     ages = np.arange(len(c))
 
     def evaluate(t):
         h = np.dot(c, np.exp(-1j * ages * t))
-        return (1 - np.exp(1j * t)) * h.conjugate(), h
+        return (retention - np.exp(1j * t)) * h.conjugate(), h
 
     crossings = np.flatnonzero((phase[1:-1] * phase[2:]) <= 0) + 1
     candidates = []
@@ -44,7 +51,7 @@ def stability_boundary(weights, grid_size=32768):
                 candidates.append((float(gain), float(t)))
     hpi = np.dot(c, (-1.0) ** ages)
     if hpi > 1e-12:
-        candidates.append((float(2 / hpi), math.pi))
+        candidates.append((float((retention + 1) / hpi), math.pi))
     if not candidates:
         raise ValueError("no positive-real-mode boundary found")
     return min(candidates)

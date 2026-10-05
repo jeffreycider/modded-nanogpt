@@ -29,6 +29,19 @@ class InfeasibleKernel(ValueError):
     pass
 
 
+def solve_stability_matched(shape,eta,mu_sum,weight_decay,boundary,**solver_options):
+    """Prescribed LR/curvature/decay determine both spectral inputs; no κ knob.
+
+    This is a frozen positive spatial mode, not the complete MuonH geometry.
+    mu_sum already contains training-loss normalization; weight_decay does not.
+    """
+    if not np.isfinite(eta) or eta<=0 or not np.isfinite(mu_sum) or mu_sum<=0:
+        raise ValueError('expected positive LR and summed-loss curvature')
+    if not np.isfinite(weight_decay) or weight_decay<0:
+        raise ValueError('expected nonnegative weight decay')
+    return solve(shape,eta*mu_sum,boundary,instantaneous_offset=weight_decay/mu_sum,**solver_options)
+
+
 def interpolate_shape(waypoints, iteration):
     if len(waypoints) != 3 or not all(a.iteration < b.iteration for a,b in zip(waypoints,waypoints[1:])):
         raise ValueError('expected three strictly ordered waypoints')
@@ -41,14 +54,14 @@ def interpolate_shape(waypoints, iteration):
     return Shape(**{key:value+(getattr(b.shape,key)-value)*fraction for key,value in asdict(a.shape).items()})
 
 
-def _fixed_phase(shape, kappa, theta, length=256, initial=None):
+def _fixed_phase(shape, kappa, theta, length=256, initial=None, instantaneous_offset=0.0):
     """Strict concave entropy solve, with exact moment/phase constraints."""
     ages = np.arange(2,length,dtype=float)
     mass = 1-shape.c0-shape.c1
     if mass <= 0 or min(shape.c0,shape.c1) <= 0 or kappa <= 0:
         raise InfeasibleKernel('nonpositive mass, tap or κ*')
     feats=np.vstack([(-1.)**ages, ages, np.log1p(ages), np.cos(ages*theta), -np.sin(ages*theta)])
-    response=(1-np.exp(1j*theta))/kappa-shape.c0-shape.c1*np.exp(-1j*theta)
+    response=(1-np.exp(1j*theta))/kappa-instantaneous_offset-shape.c0-shape.c1*np.exp(-1j*theta)
     target=np.array([shape.c1-shape.c0, shape.mean_lag-shape.c1,
                      shape.log_moment-shape.c1*np.log(2),response.real,response.imag])/mass
     scales=np.array([2.,float(length),np.log(length),2.,2.])
@@ -83,9 +96,9 @@ def _fixed_phase(shape, kappa, theta, length=256, initial=None):
     raise InfeasibleKernel('entropy dual did not converge')
 
 
-def phase_feasible(shape,kappa,theta,length=256):
+def phase_feasible(shape,kappa,theta,length=256,instantaneous_offset=0.0):
     ages=np.arange(2,length,dtype=float)
-    response=(1-np.exp(1j*theta))/kappa-shape.c0-shape.c1*np.exp(-1j*theta)
+    response=(1-np.exp(1j*theta))/kappa-instantaneous_offset-shape.c0-shape.c1*np.exp(-1j*theta)
     a=np.vstack([np.ones(len(ages)),(-1.)**ages,ages/length,np.log1p(ages),
                  np.cos(ages*theta),-np.sin(ages*theta)])
     b=np.array([1-shape.c0-shape.c1,shape.c1-shape.c0,(shape.mean_lag-shape.c1)/length,
@@ -117,19 +130,28 @@ def unconstrained(shape,length=256):
     raise InfeasibleKernel('original shape constraints infeasible')
 
 
-def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256):
+def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256,instantaneous_offset=0.0):
     """Search phase branches; accept only independently certified first crossings.
 
     The returned solution is the highest entropy certified candidate found by
     this numerical search. No claim of a global nonconvex optimum is made.
     """
+    if not np.isfinite(instantaneous_offset) or instantaneous_offset<0:
+        raise ValueError('expected a nonnegative decay/curvature lag-zero offset')
+    # The shape describes the NORMALIZED raw gradient kernel. Decay contributes
+    # extra mass only to the spectral constraint, not to its shape or entropy.
+    original_boundary=boundary
+    def boundary(weights):
+        shifted=np.array(weights,dtype=np.float64,copy=True)
+        shifted[0]+=instantaneous_offset
+        return original_boundary(shifted)
     if previous is None:
         try:
             weights,lam=unconstrained(shape,length)
             actual,theta=boundary(weights)
             if abs(actual/kappa-1)<2e-6:
                 return {'weights':weights,'entropy':float(-weights@np.log(weights)),
-                        'theta':theta,'dual':lam,'kappa':kappa}
+                        'theta':theta,'dual':lam,'kappa':kappa,'instantaneous_offset':instantaneous_offset}
         except InfeasibleKernel:
             pass
     # Follow a previously certified entropy maximum while the inputs vary
@@ -138,7 +160,7 @@ def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256):
         local=[]
         def local_objective(theta):
             try:
-                weights,entropy,lam=_fixed_phase(shape,kappa,theta,length,previous['dual'])
+                weights,entropy,lam=_fixed_phase(shape,kappa,theta,length,previous['dual'],instantaneous_offset=instantaneous_offset)
                 local.append((entropy,theta,weights,lam))
                 return -entropy
             except InfeasibleKernel:
@@ -152,17 +174,17 @@ def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256):
             entropy,theta,weights,lam=max(local,key=lambda x:x[0])
             actual,_=boundary(weights)
             if abs(actual/kappa-1)<2e-6:
-                return {'weights':weights,'entropy':entropy,'theta':theta,'dual':lam,'kappa':kappa}
+                return {'weights':weights,'entropy':entropy,'theta':theta,'dual':lam,'kappa':kappa,'instantaneous_offset':instantaneous_offset}
     grid=np.unique(np.r_[np.geomspace(1e-5,.12,phase_points//2),
                          np.linspace(.12,np.pi-1e-5,phase_points)])
     if previous is not None:
         grid=np.unique(np.r_[grid,previous['theta'],previous['theta']+np.linspace(-.03,.03,9)])
     candidates=[]
     for theta in grid:
-        if not 0<theta<np.pi or abs(1-np.exp(1j*theta))>kappa:
+        if not 0<theta<np.pi or abs(1-np.exp(1j*theta))>kappa*(1+instantaneous_offset):
             continue
         try:
-            weights,entropy,lam=_fixed_phase(shape,kappa,theta,length)
+            weights,entropy,lam=_fixed_phase(shape,kappa,theta,length,instantaneous_offset=instantaneous_offset)
         except InfeasibleKernel:
             continue
         actual,first_phase=boundary(weights)
@@ -175,7 +197,7 @@ def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256):
     lo=grid[max(0,index-1)];hi=grid[min(len(grid)-1,index+1)]
     def objective(theta):
         try:
-            weights,entropy,lam=_fixed_phase(shape,kappa,theta,length)
+            weights,entropy,lam=_fixed_phase(shape,kappa,theta,length,instantaneous_offset=instantaneous_offset)
             actual,_=boundary(weights)
             if abs(actual/kappa-1)<2e-6:
                 candidates.append((entropy,theta,weights,lam))
@@ -185,4 +207,4 @@ def solve(shape,kappa,boundary,previous=None,phase_points=128,length=256):
         return 1e3
     minimize_scalar(objective,bounds=(lo,hi),method='bounded',options={'xatol':1e-8,'maxiter':50})
     entropy,theta,weights,lam=max(candidates,key=lambda x:x[0])
-    return {'weights':weights,'entropy':entropy,'theta':theta,'dual':lam,'kappa':kappa}
+    return {'weights':weights,'entropy':entropy,'theta':theta,'dual':lam,'kappa':kappa,'instantaneous_offset':instantaneous_offset}

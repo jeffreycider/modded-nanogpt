@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 import time
 import numpy as np
-from constrained_maxentslop import Shape,Waypoint,interpolate_shape,solve,InfeasibleKernel
+from constrained_maxentslop import Shape,Waypoint,interpolate_shape,solve_stability_matched,InfeasibleKernel
 from kernel_boundary import stability_boundary
 
 # Immutable original-record anchors; these are not candidate hyperparameters.
@@ -38,7 +38,8 @@ def prepare(config,original_source,output):
     for t in range(start,TRAIN_STEPS):
         shape=interpolate_shape(waypoints,t)
         target=REFERENCE_KAPPA*lr(t)/REFERENCE_LR
-        try:previous=solve(shape,target,stability_boundary,previous=previous,phase_points=128)
+        try:previous=solve_stability_matched(shape,lr(t),REFERENCE_KAPPA/REFERENCE_LR,
+                                           0.0,stability_boundary,previous=previous,phase_points=128)
         except InfeasibleKernel as e:raise InfeasibleKernel(f'iteration {t}: {e}') from e
         kernel=previous['weights'].astype(np.float32)
         actual,theta=stability_boundary(kernel)
@@ -57,6 +58,7 @@ def prepare(config,original_source,output):
     metadata={'config':config,'start':start,'train_steps':TRAIN_STEPS,'original_sha256':ORIGINAL_SHA256,
         'reference_start':REFERENCE_START,'reference_lr':REFERENCE_LR,'reference_kappa':REFERENCE_KAPPA,
         'mu_sum_fixed':REFERENCE_KAPPA/REFERENCE_LR,'mu_token_mean_fixed':REFERENCE_KAPPA/REFERENCE_LR/524288,
+        'operator_scope':'frozen positive spatial mode only; MuonH decay=0; hyperball geometry not modeled',
         'max_relative_kappa_error':max(abs(d['kappa_actual']/d['kappa_target']-1) for d in diagnostics),
         'max_kernel_step_l1':float(np.abs(np.diff(table.astype(float),axis=0)).sum(axis=1).max()),
         'kernel_sha256':hashlib.sha256(table.tobytes()).hexdigest(),'elapsed_seconds':time.time()-began}
